@@ -1,0 +1,407 @@
+Program.Sub.ScreenSU.Start
+Gui.frmProjUpload..Create
+Gui.frmProjUpload..Caption("Project Uploader")
+Gui.frmProjUpload..Size(5715,7680)
+Gui.frmProjUpload..MinX(0)
+Gui.frmProjUpload..MinY(0)
+Gui.frmProjUpload..Position(0,0)
+Gui.frmProjUpload..BackColor(-2147483633)
+Gui.frmProjUpload..MousePointer(0)
+Gui.frmProjUpload..Event(UnLoad,frmProjUpload_UnLoad)
+Gui.frmProjUpload.fraCustomer.Create(Frame)
+Gui.frmProjUpload.fraCustomer.Size(5265,1125)
+Gui.frmProjUpload.fraCustomer.Position(90,1440)
+Gui.frmProjUpload.fraCustomer.Caption("Select Customer")
+Gui.frmProjUpload.cmdSelectCust.Create(Button)
+Gui.frmProjUpload.cmdSelectCust.Size(855,375)
+Gui.frmProjUpload.cmdSelectCust.Position(4260,630)
+Gui.frmProjUpload.cmdSelectCust.Parent("fraCustomer")
+Gui.frmProjUpload.cmdSelectCust.Caption("^")
+Gui.frmProjUpload.cmdSelectCust.Event(Click,cmdSelectCust_Click)
+Gui.frmProjUpload.txtCustomer.Create(TextBox,"",True,3975,300,0,90,660,False,0,"Arial",8,-2147483643,1)
+Gui.frmProjUpload.txtCustomer.Parent("fraCustomer")
+Gui.frmProjUpload.lblCustomer.Create(Label,"",True,1935,255,0,105,390,True,0,"Arial",8,-2147483633,0)
+Gui.frmProjUpload.lblCustomer.Parent("fraCustomer")
+Gui.frmProjUpload.fraOptions.Create(Frame)
+Gui.frmProjUpload.fraOptions.Size(5235,1245)
+Gui.frmProjUpload.fraOptions.Position(105,150)
+Gui.frmProjUpload.fraOptions.Caption("Select / Create Project Options")
+Gui.frmProjUpload.chkQuote.Create(CheckBox)
+Gui.frmProjUpload.chkQuote.Size(2835,360)
+Gui.frmProjUpload.chkQuote.Position(90,780)
+Gui.frmProjUpload.chkQuote.Caption("Create Quote")
+Gui.frmProjUpload.chkQuote.Parent("fraOptions")
+Gui.frmProjUpload.txtProjectNum.Create(TextBox,"",True,1800,300,0,90,390,False,0,"Arial",8,-2147483643,1)
+Gui.frmProjUpload.txtProjectNum.Parent("fraOptions")
+Gui.frmProjUpload.txtProjectNum.ToolTip("Project number is not required if you are creating a new project.")
+Gui.frmProjUpload.cmdBrowseProj.Create(Button)
+Gui.frmProjUpload.cmdBrowseProj.Size(735,375)
+Gui.frmProjUpload.cmdBrowseProj.Position(1965,345)
+Gui.frmProjUpload.cmdBrowseProj.Caption("^")
+Gui.frmProjUpload.cmdBrowseProj.Event(Click,cmdBrowseProj_Click)
+Gui.frmProjUpload.cmdBrowseProj.Parent("fraOptions")
+Gui.frmProjUpload.cmdBrowseProj.ToolTip("Project Number is not required if you are creating a new project.")
+Gui.frmProjUpload.fraUpload.Create(Frame)
+Gui.frmProjUpload.fraUpload.Size(5250,4320)
+Gui.frmProjUpload.fraUpload.Position(90,2670)
+Gui.frmProjUpload.fraUpload.Caption("Drag & Drop CSV File")
+Gui.frmProjUpload.trvUpload.Create(TreeView)
+Gui.frmProjUpload.trvUpload.Size(5100,3810)
+Gui.frmProjUpload.trvUpload.Position(75,330)
+Gui.frmProjUpload.trvUpload.Parent("fraUpload")
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.sDataErr.Declare(String)
+V.Global.sXLS.Declare(String)
+v.Global.sBuildData.Declare(string)
+v.Global.sQuote.Declare(string)
+Program.External.Include.Library("6004.lib")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.ODBC.Connection!conx.openconnection(v.Ambient.PDSN,v.Ambient.PUser,v.Ambient.PPass)
+f.Intrinsic.UI.SetBrowserHotTypeAhead(true)
+gui.frmProjUpload.trvUpload.event("DRAGDROPFILE",Dragdrop)
+GUI.frmProjUpload.chkCreateProject.Value(1)
+gui.frmProjUpload.chkQuote.Value(1)
+gui.frmProjUpload..Show
+Program.Sub.Main.End
+
+Program.Sub.DragDrop.Start
+f.Intrinsic.Control.Try
+	V.Local.sCustomer.Declare(string)
+	v.Local.sFiles.Declare(String)
+	v.Local.sContent.Declare(string)
+	v.Local.sNewContents.Declare(string)
+	v.Local.sProjNumber.Declare(string)
+	v.Local.sDescr.Declare(string)
+	v.Local.sQTY.Declare(string)
+	v.Local.sUM.Declare(string)
+	v.Local.sPrice.Declare(string)
+	v.Local.sPosition.Declare(string)
+	v.Local.sAvgRate.Declare(string)
+	v.Local.sNoHours.Declare(string)
+	v.Local.sMaterial.Declare(string)
+	v.Local.sOutside.Declare(string)
+	v.Local.sStartDt.Declare(string)
+	v.Local.sEndDt.Declare(string)
+	v.Local.ssql.Declare(string)
+	v.Local.sPhase.Declare(string)
+	v.Local.sSite.Declare(string)
+	v.Local.sSchedule.Declare(string)
+	v.Local.fextension.Declare(float)
+	v.Local.fLabourExt.Declare(Float)
+	v.Local.sret.Declare(string)
+	V.Local.sPart.Declare(string)
+	v.Local.sTemp.Declare(string)
+	v.Local.sparams.Declare(string)
+	V.Local.sCustomerName.Declare(string)
+	
+	V.Local.fSalestotal.Declare(float)
+	v.Local.fMatTotal.Declare(float)
+	v.Local.fOutsideTotal.Declare(float)
+	v.Local.fLabourTotal.Declare(float)
+	v.Local.fHoursTotal.Declare(float)
+	v.Local.lqty.Declare(long)
+	v.Local.sProjDescr.Declare(string)
+	v.Local.sProjDescr.Set(v.Screen.frmProjUpload!txtCustomer.text)
+	v.Local.sCustomer.Set(v.Screen.frmProjUpload!lblCustomer.Caption)
+	v.Local.sCustomerName.Set(v.Screen.frmProjUpload!txtCustomer.text)
+	
+	v.Local.sProjNumber.Set(v.Screen.frmProjUpload!txtProjectNum.text)
+	v.Local.i.Declare(long)
+	v.Local.j.Declare(long)
+	v.Local.lOBOB.Declare(long)
+	
+	F.Intrinsic.Control.If(v.Local.sCustomerName.Trim,=,"")
+	F.Intrinsic.Control.AndIf(v.Screen.frmProjUpload!chkQuote.Value,=,1)
+		f.Intrinsic.UI.Msgbox("No Customer selected for Quote.")
+		f.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	
+	f.Data.DataTable.AddRow("6004Header","Type","Q","CustNum",v.Local.sCustomer.Trim)
+				
+	f.Intrinsic.String.Split(v.Args.Files,"*!*",v.Local.sFiles)
+	f.Intrinsic.UI.InvokeWaitDialog("Processing...")
+	f.Intrinsic.Control.For(v.Local.i,0,v.Local.sFiles.UBound,1)
+		'Check if multiple files
+		f.Intrinsic.Control.If(v.Local.sFiles.UBound,>,0)
+			f.Intrinsic.UI.Msgbox("Multiple files loaded, please upload only one.")
+			f.Intrinsic.UI.CloseWaitDialog
+			f.Intrinsic.Control.ExitSub
+		f.Intrinsic.Control.EndIf
+		
+		'Open its contents
+		f.Intrinsic.File.File2String(v.Local.sFiles(V.Local.i),v.Local.sContent)
+		f.Intrinsic.String.Split(v.Local.sContent,v.Ambient.NewLine,v.Local.sContent)
+		f.Intrinsic.Control.For(v.Local.j,1,v.Local.sContent.UBound,1)
+			F.Intrinsic.Control.If(v.local.sContent(v.Local.j).trim,<>,"")
+				f.Intrinsic.String.SplitCSV(v.Local.sContent(v.Local.j),v.Local.sNewContents)
+				v.Local.sPart.Set(v.Local.sNewContents(0))
+				v.Local.sDescr.Set(v.Local.sNewContents(1))
+				f.Intrinsic.String.Left(v.Local.sDescr,30,v.Local.sDescr)
+				v.Local.sQTY.Set(v.Local.sNewContents(2))
+				v.Local.sUM.Set(v.Local.sNewContents(3))
+				v.Local.sPrice.Set(v.Local.sNewContents(4))
+				v.Local.sPosition.Set(v.Local.sNewContents(5))
+				v.Local.sPhase.Set(v.Local.sNewContents(5))
+				'If avg rate blank, then 0
+				v.Local.sAvgRate.Set(v.Local.sNewContents(6))
+				f.Intrinsic.Control.If(v.Local.sAvgRate.Trim,=,"")
+					v.Local.sAvgRate.Set(0)
+				f.Intrinsic.Control.EndIf
+				'If hours blank, then 0
+				v.Local.sNoHours.Set(v.Local.sNewContents(7))
+				f.Intrinsic.Control.If(v.Local.sNoHours.Trim,=,"")
+					v.Local.snoHours.Set(0)
+				f.Intrinsic.Control.EndIf
+				'If blank, then 0
+				v.Local.sMaterial.Set(v.Local.sNewContents(8))
+				f.Intrinsic.Control.If(v.Local.sMaterial.Trim,=,"")
+					v.Local.sMaterial.Set(0)
+				f.Intrinsic.Control.EndIf
+				f.Intrinsic.String.Replace(v.Local.sMaterial,"$","",v.Local.sMaterial)
+				f.Intrinsic.String.Replace(v.Local.sMaterial,",","",v.Local.sMaterial)
+				'CONVERT TO NUMBERS, GET RID OF THOSE COMMAS!
+				v.Local.sOutside.Set(v.Local.sNewContents(9))
+				'If blank then 0
+				f.Intrinsic.Control.If(v.Local.sOutside.Trim,=,"")
+					v.Local.sOutside.Set(0)
+				f.Intrinsic.Control.EndIf
+				v.Local.sStartDt.Set(v.local.sNewContents(10))
+				v.Local.sEndDt.Set(v.Local.sNewContents(11))
+				v.Local.sSchedule.Set(v.Local.sNewContents(12))
+				v.Local.sSite.Set(v.Local.sNewContents(13))
+				f.Intrinsic.String.Format(v.Local.sStartDt,"YYYYMMDD",v.Local.sStartDt)
+				f.Intrinsic.String.Format(v.Local.sEndDt,"YYYYMMDD",v.Local.sEndDt)
+				
+				f.Intrinsic.Math.Mult(v.Local.sQTY,v.Local.sPrice,v.Local.fextension)
+				f.Intrinsic.Math.Mult(v.Local.sNoHours,v.Local.sAvgRate,v.Local.fLabourExt)
+				f.Intrinsic.Math.Round(v.Local.fLabourExt,2,v.Local.fLabourExt)
+				f.Intrinsic.Math.Round(v.Local.fextension,2,v.Local.fextension)
+				
+				v.Local.lQty.Set(v.Local.sQTY)
+				F.Intrinsic.Control.If(v.Screen.frmProjUpload!chkQuote.Value,=,1)
+					F.Intrinsic.Math.Mult(V.Local.lqty,10000,V.Local.lqty)
+					F.Intrinsic.Math.Mult(V.Local.sPrice,1000000,V.Local.sPrice)
+					f.Data.DataTable.AddRow("6004Lines","QtyOrdered",v.Local.lqty,"Part",v.Local.sPart,"QuotedPrice",v.Local.sPrice,"PartDescription",v.Local.sDescr,"ExtendedAmount",v.Local.fextension)
+				f.Intrinsic.Control.EndIf
+				
+				'Check if it exists in projects
+				f.Intrinsic.String.Build("SELECT * FROM PROJECT_PHASE WHERE PROJECT='{0}' AND PHASE='{1}'",V.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+				f.ODBC.Connection!conx.executeandreturn(v.Local.ssql,v.Local.sret)
+				f.Intrinsic.Control.If(v.Local.sret.Trim,=,"")
+					'Add project phase combo
+					F.Intrinsic.String.Build("INSERT INTO PROJECT_PHASE VALUES ('{0}','{1}',{2},'{3}',{4},{5},{6},{7},{8},'{9}','{10}',{11},'{12}','{13}','{14}','','',' ',' ',' ','00000000','00000000','','00000000','00000000','','','')",v.Local.sProjNumber,V.Local.sPosition,v.Local.sPosition,V.Local.sDescr,V.Local.fextension,V.Local.sMaterial,v.Local.sOutside,v.Local.fLabourExt,v.Local.sNoHours,v.Local.sStartDt,v.Local.sEndDt,v.Local.sAvgRate,v.Local.sSchedule,v.Local.sSite,v.Local.fextension,V.Local.sSQL)
+					F.ODBC.Connection!conx.Execute(V.Local.sSQL)
+				f.Intrinsic.Control.Else
+					'Description
+					f.Intrinsic.String.Build("UPDATE PROJECT_PHASE SET DESCR='{0}' where PROJECT='{1}' and PHASE='{2}'",v.Local.sDescr,v.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+					f.ODBC.Connection!conx.execute(v.Local.ssql)
+					'Position
+					f.Intrinsic.String.Build("UPDATE PROJECT_PHASE SET POS='{0}' where PROJECT='{1}' and PHASE='{2}'",v.Local.sPosition,v.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+					f.ODBC.Connection!conx.execute(v.Local.ssql)
+					'Original Sales
+					f.Intrinsic.String.Build("UPDATE PROJECT_PHASE SET ORIG_SALES='{0}' where PROJECT='{1}' and PHASE='{2}'",v.Local.fextension,v.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+					f.ODBC.Connection!conx.execute(v.Local.ssql)
+					'Start Date
+					f.Intrinsic.String.Build("UPDATE PROJECT_PHASE SET ORIG_START='{0}' where PROJECT='{1}' and PHASE='{2}'",v.Local.sStartDt,v.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+					f.ODBC.Connection!conx.execute(v.Local.ssql)
+					'Finish Date
+					f.Intrinsic.String.Build("UPDATE PROJECT_PHASE SET ORIG_END='{0}' where PROJECT='{1}' and PHASE='{2}'",v.Local.sEndDt,v.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+					f.ODBC.Connection!conx.execute(v.Local.ssql)
+					'Schedule Code
+					f.Intrinsic.String.Build("UPDATE PROJECT_PHASE SET USER_1='{0}' where PROJECT='{1}' and PHASE='{2}'",v.Local.sSchedule,v.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+					f.ODBC.Connection!conx.execute(v.Local.ssql)
+					'Site Instructions
+					f.Intrinsic.String.Build("UPDATE PROJECT_PHASE SET USER_2='{0}' where PROJECT='{1}' and PHASE='{2}'",v.Local.sSite,v.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+					f.ODBC.Connection!conx.execute(v.Local.ssql)
+					'Schedule rate for the bloody decimal points...
+
+					f.Intrinsic.String.Build("UPDATE PROJECT_PHASE SET USER_3='{0}' where PROJECT='{1}' and PHASE='{2}'",v.Local.fextension,v.Local.sProjNumber,v.Local.sPhase,v.Local.ssql)
+					f.ODBC.Connection!conx.execute(v.Local.ssql)
+				f.Intrinsic.Control.EndIf
+				f.Intrinsic.Math.Add(v.Local.fSalestotal,v.Local.fextension,v.Local.fSalestotal)
+				f.Intrinsic.Math.Add(v.Local.fMatTotal,v.Local.sMaterial,v.Local.fMatTotal)
+				f.Intrinsic.Math.Add(v.Local.fOutsideTotal,v.Local.sOutside,v.Local.fOutsideTotal)
+				f.Intrinsic.Math.Add(v.Local.fLabourTotal,v.Local.fLabourExt,v.Local.fLabourTotal)
+				f.Intrinsic.Math.Add(v.Local.fHoursTotal,v.Local.sNoHours,v.Local.fHoursTotal)
+			f.Intrinsic.Control.EndIf
+		f.Intrinsic.Control.Next(v.Local.j)
+		'Check if Project exists
+		f.Intrinsic.String.Build("SELECT * FROM V_PROJECT_MASTER WHERE PROJECT='{0}'",v.Local.sProjNumber,v.Local.ssql)
+		f.ODBC.Connection!conx.executeandreturn(v.Local.ssql,v.Local.sret)
+		f.Intrinsic.Control.If(v.Local.sret.Trim,=,"")
+			F.Intrinsic.String.Build("INSERT INTO PROJECT_MASTER (PROJECT, DESCR, ORIG_SALES, ORIG_MATL, ORIG_OUTS, ORIG_LABR, ORIG_HOURS, ORIG_START, ORIG_END, STD_LABOR_RATE, CUSTOMER) VALUES ('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}')",v.Local.sProjNumber,v.Local.sProjDescr,v.Local.fSalestotal,v.Local.fMatTotal,v.Local.fOutsideTotal,v.Local.fLabourTotal,v.Local.fHoursTotal,v.Local.sStartDt,v.Local.sEndDt,v.Local.sAvgRate,v.Screen.frmProjUpload!lblCustomer.Caption,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+		f.Intrinsic.Control.Else
+'			'Update description
+'			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET DESCR='{0}' WHERE PROJECT='{1}'",v.Local.sProjDescr,v.Local.sProjNumber,v.Local.ssql)
+'			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Update sales
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET ORIG_SALES='{0}' WHERE PROJECT='{1}'",v.Local.fSalestotal,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Update material
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET ORIG_MATL='{0}' WHERE PROJECT='{1}'",v.Local.fMatTotal,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Update Outside
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET ORIG_OUTS='{0}' WHERE PROJECT='{1}'",v.Local.fOutsideTotal,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Update Labour
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET ORIG_LABR='{0}' WHERE PROJECT='{1}'",v.Local.fLabourTotal,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Update Hours
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET ORIG_HOURS='{0}' WHERE PROJECT='{1}'",v.Local.fHoursTotal,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Update Start Date
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET ORIG_START='{0}' WHERE PROJECT='{1}'",v.Local.sStartDt,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Update End Date
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET ORIG_END='{0}' WHERE PROJECT='{1}'",v.Local.sEndDt,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Update Labour
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET STD_LABOR_RATE='{0}' WHERE PROJECT='{1}'",v.Local.sAvgRate,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Standard -- Set User Field 1 (STATUS) TO 'QUOTED'
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET USER_1='{0}' WHERE PROJECT='{1}'","QUOTED",v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Standard -- Set User Field 2 (PERCENTAGE) TO '0'
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET USER_2='{0}' WHERE PROJECT='{1}'","0",v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Standard -- Set User Field 3 (QUOTED) TO Total Calculated, fSalesTotal
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET USER_3='{0}' WHERE PROJECT='{1}'",v.Local.fSalestotal,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			'Standard -- Set User Field 4 (FORECAST) TO Total Calculated, fSalesTotal
+			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET USER_4='{0}' WHERE PROJECT='{1}'",v.Local.fSalestotal,v.Local.sProjNumber,v.Local.ssql)
+			f.ODBC.Connection!conx.execute(v.Local.ssql)
+			
+			'Update Customer
+'			f.Intrinsic.String.Build("UPDATE PROJECT_MASTER SET CUSTOMER='{0}' WHERE PROJECT='{1}'",v.Screen.frmProjUpload!lblCustomer.Caption,v.Local.sProjNumber,v.Local.ssql)
+'			f.ODBC.Connection!conx.execute(v.Local.ssql)
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.Next(v.Local.i)
+	
+	'Upload quote
+	f.Intrinsic.Control.CallSub(6004Sync)
+	
+	F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","ORDQTE.txt",v.Local.stemp)
+	f.Intrinsic.File.File2String(v.Local.sTemp,v.Global.sQuote)
+	
+	'Loop through again for long descriptions
+	f.Intrinsic.File.File2String(v.Local.sFiles(0),v.Local.sContent)
+	f.Intrinsic.String.Split(v.Local.sContent,v.Ambient.NewLine,v.Local.sContent)
+	F.Intrinsic.Control.If(V.Screen.frmProjUpload!chkQuote.Value,=,1)
+		f.Intrinsic.Control.For(v.Local.j,1,v.Local.sContent.UBound,1)
+			F.Intrinsic.Control.If(v.local.sContent(v.Local.j).trim,<>,"")
+				f.Intrinsic.String.SplitCSV(v.Local.sContent(v.Local.j),v.Local.sNewContents)
+				f.Intrinsic.Control.CallSub(addDescriptions,"sQuote",v.Global.sQuote,"sLongDesc",v.Local.sNewContents(14),"sLine",v.Local.j)
+			f.Intrinsic.Control.EndIf
+		f.Intrinsic.Control.Next(v.Local.j)
+		
+		F.Intrinsic.String.Concat(V.Global.sQuote,"!*!O",v.Local.sparams)
+		f.Global.General.CallWrapperAsync(251000,v.local.sparams)
+	F.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.UI.CloseWaitDialog
+	f.ODBC.Connection!conx.Close
+	f.Intrinsic.Control.End
+f.Intrinsic.control.Catch
+	F.Intrinsic.UI.Msgbox(V.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmProjUpload_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.DragDrop.End
+	
+Program.Sub.addDescriptions.Start
+f.Intrinsic.Control.Try
+	v.Local.sLine.Declare(string)
+	v.Local.sSql.Declare(string)
+	v.Local.squote.Declare(string)
+	v.Local.squote.Set(v.Args.sQuote)
+	f.Intrinsic.String.LPad(v.args.sLine,"0",3,v.Local.sLine)
+	
+	v.Local.SSQL.Set("INSERT INTO QUOTE_LN_TEXT (QUOTE_NUMBER,QUOTE_LINE,QUOTE_TYPE,TEXT) VALUES('{0}','{1}0','{2}','{3}')")
+	f.Intrinsic.String.Build(v.Local.sSql,v.Local.sQuote,v.Local.sLine,"9999",v.Args.sLongDesc.PSQLFriendly,v.Local.SSQL)
+	f.ODBC.Connection!conx.execute(v.Local.SSQL)	
+f.Intrinsic.Control.Catch
+	F.Intrinsic.UI.Msgbox(V.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmProjUpload_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.addDescriptions.End
+
+Program.Sub.cmdSelectCust_Click.Start
+V.Local.sRet.Declare(String)
+V.Local.sTitles.Declare(String)
+V.Local.iWidths.Declare(String)
+V.Local.ssql.Declare(String)
+
+F.intrinsic.string.split("Customer*!*Name Customer","*!*",V.local.sTitles)
+F.intrinsic.string.split("2000*!*3000","*!*",V.local.iWidths)
+
+V.Local.ssql.set("SELECT CUSTOMER, NAME_CUSTOMER from V_CUSTOMER_MASTER")
+
+F.intrinsic.ui.browser("Select a Customer",conx,v.Local.ssql,V.local.sTitles,V.local.iWidths,V.local.sRet)
+
+F.intrinsic.control.if(V.local.sRet,"=","***CANCEL***")
+F.intrinsic.control.else
+	F.intrinsic.string.split(V.local.sRet,"*!*",V.local.sRet)
+	GUI.frmProjUpload.txtCustomer.Text(v.Local.sRet(1))
+	gui.frmProjUpload.lblCustomer.text(v.Local.sRet(0))
+F.Intrinsic.Control.endif
+Program.Sub.cmdSelectCust_Click.End
+
+Program.Sub.frmProjUpload_UnLoad.Start
+f.ODBC.Connection!conx.Close
+f.Intrinsic.Control.End
+Program.Sub.frmProjUpload_UnLoad.End
+
+Program.Sub.cmdBrowseProj_Click.Start
+V.Local.sRet.Declare(String)
+V.Local.sTitles.Declare(String)
+V.Local.iWidths.Declare(String)
+V.Local.ssql.Declare(String)
+
+F.intrinsic.string.split("Project*!*Description*!*Customer*!*Name Customer","*!*",V.local.sTitles)
+F.intrinsic.string.split("2000*!*3000*!*2000*!*3000","*!*",V.local.iWidths)
+
+V.Local.ssql.set("select PROJECT, DESCR, V_CUSTOMER_MASTER.CUSTOMER, V_CUSTOMER_MASTER.NAME_CUSTOMER from V_PROJECT_MASTER LEFT JOIN V_CUSTOMER_MASTER ON V_PROJECT_MASTER.CUSTOMER = V_CUSTOMER_MASTER.CUSTOMER")
+
+F.intrinsic.ui.browser("Select a Customer",conx,v.Local.ssql,V.local.sTitles,V.local.iWidths,V.local.sRet)
+
+F.intrinsic.control.if(V.local.sRet,"=","***CANCEL***")
+F.intrinsic.control.else
+	F.intrinsic.string.split(V.local.sRet,"*!*",V.local.sRet)
+	GUI.frmProjUpload.txtProjectNum.Text(v.Local.sRet(0))
+	GUI.frmProjUpload.txtCustomer.Text(v.Local.sRet(3))
+	gui.frmProjUpload.lblCustomer.text(v.Local.sRet(2))
+	gui.frmProjUpload.chkQuote.Value(1)
+F.Intrinsic.Control.endif
+
+Program.Sub.cmdBrowseProj_Click.End
+
+Program.Sub.Comments.Start
+${$0$}$Budget Upload$}$BCC$}$10/29/2015
+${$2$}$$}$$}$2$}$4$}$Table Update$}$11/23/2015 9:26:14 AM$}$PROJECT_CURR_BUDG needed to be updated. A column was added in Cobol but not in the SQL. Should be available in the 2015.3, anything earlier will require the updated table to be added manually.
+${$2$}$$}$$}$1$}$4$}$Custom Menu Item$}$11/23/2015 9:15:39 AM$}$Project Management -> Administration -> Budget Upload
+${$2$}$$}$$}$0$}$4$}$Budget Upload Excel File$}$11/23/2015 9:14:45 AM$}$The user will need to create an excel file as per the Project Notes and Description Tab
+${$3$}$0$}$$}$0$}$-1$}$$}$12:00:00 AM$}$A GAB script will be created that will read a spreadsheet and update the Current Budget records on current and existing projects into Global Shop.
+
+Spreadsheet Columns:
+
+Project
+
+Phase
+
+Phase Desc
+
+Group
+
+HRS
+
+$/Hr
+
+Amount
+
+First row will be the header row.
+Program.Sub.Comments.End
+
